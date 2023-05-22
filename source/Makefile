@@ -1,6 +1,6 @@
 CFLAGS = -Wextra -g
 
-objs = main.o ConexaoRawSocket.o packet.o
+objs = main.o ConexaoRawSocket.o packet.o fileManager.o
 
 # regra default (primeira regra)
 all: main
@@ -12,6 +12,7 @@ main: $(objs)
 main.o: main.c
 ConexaoRawSocket.o: ConexaoRawSocket.c ConexaoRawSocket.h
 packet.o: packet.c packet.h
+fileManager.o: fileManager.c fileManager.h
  
 # remove arquivos temporários
 clean:

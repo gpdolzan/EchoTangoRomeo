@@ -29,7 +29,7 @@ typedef struct packet_t
     unsigned char tamanho : 6;
     unsigned char sequencia : 6;
     unsigned char tipo : 4;
-    unsigned char* dados;
+    unsigned char dados[63];
     unsigned char paridade;
 }packet_t;
 
@@ -44,5 +44,11 @@ packet_t* receivePacket(int socket);
 
 //funcao que imprime uma mensagem dependendo do tipo da mensagem
 void printTipoPacote(unsigned char tipo);
+
+// funcao que imprime o conteudo do pacote
+void printPacket(packet_t* packet);
+
+// funcao que processa o pacote
+void processPacket(packet_t* packet);
 
 #endif

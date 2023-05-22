@@ -1,4 +1,5 @@
 #include "packet.h"
+#include "fileManager.h"
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -7,12 +8,13 @@
 packet_t* createPacket(unsigned char tamanho, unsigned char sequencia, unsigned char tipo, unsigned char* dados)
 {
     packet_t* packet = (packet_t*) malloc(sizeof(packet_t));
+    packet->marcador_inicio = 0x7E;
     packet->tamanho = tamanho;
     packet->sequencia = sequencia;
     packet->tipo = tipo;
-    
-    // aloca dados com base no tamanho
-    packet->dados = (unsigned char*) malloc(tamanho);
+
+    // Coloca todos os valores de dados dentro do pacote como sendo 1 usando memset
+    memset(packet->dados, 65, MAX_DADOS);
 
     // Paridade eh um xor de tamanho sequencia e tipo
     packet->paridade = tamanho ^ sequencia ^ tipo;
@@ -32,8 +34,8 @@ packet_t* receivePacket(int socket)
 {
     // Buffer com tamanho maximo que um pacote pode ter
     unsigned char buffer[MAX_PACKET];
-    unsigned char* dados;
-    int lastCount = 0;
+    unsigned char dados[MAX_DADOS + 1];
+    int paridade = 0;
     
     // Aloca pacote
     packet_t* packet = (packet_t*) malloc(sizeof(packet_t));
@@ -45,36 +47,40 @@ packet_t* receivePacket(int socket)
     if(buffer[0] == 0x7E)
     {
         packet->marcador_inicio = buffer[0];
-        printf("Recebi um pacote, verificando seu conteudo\n");
 
         packet->tamanho = buffer[1];
-        printf("Tamanho do pacote: %d\n", packet->tamanho);
         packet->sequencia = buffer[2];
-        printf("Sequencia do pacote: %d\n", packet->sequencia);
         packet->tipo = buffer[3];
-        printTipoPacote(packet->tipo);
 
-        // Usando tamanho, use um for para ler somente o tamanho de dados
-        dados = (unsigned char*) malloc(packet->tamanho);
-        for(int i = 4; i < packet->tamanho + 4; i++)
-        {
-            dados[i - 4] = buffer[i];
-            lastCount = i;
-        }
-        packet->dados = dados;
-        printf("Dados do pacote: %s\n", packet->dados);
-        lastCount++;
+        // Copia dados do buffer para o pacote usando memcpy
+        memcpy(packet->dados, buffer + 4, 63);
+        memcpy(dados, buffer + 4, 63);
+        dados[64] = '\0';
+        
+        printf("%s\n", packet->dados);
+        printf("%s\n", dados);
 
         // Pega paridade do pacote
-        packet->paridade = buffer[lastCount];
-        printf("Paridade do pacote: %d\n", (int)packet->paridade);
-        
-        return packet;
+        packet->paridade = buffer[67];
+
+        // Calcula paridade
+        paridade = packet->tamanho ^ packet->sequencia ^ packet->tipo;
+
+        if(packet->paridade == paridade)
+        {
+            return packet;
+        }
+        else
+        {
+            // Erro de paridade, manda erro e espera resposta TO DO
+
+            return NULL;
+        }
     }
     return NULL;
 }
 
-void printTipoPacote(unsigned char tipo)
+/*void printTipoPacote(unsigned char tipo)
 {
     // Switch contendo todos os tipos dentro de Packet.h e um printf que imprime o tipo do pacote
     switch (tipo)
@@ -130,5 +136,27 @@ void printTipoPacote(unsigned char tipo)
         default:
             printf("Tipo do pacote: INVALIDO\n");
             break;
+    }
+}*/
+
+void printPacket(packet_t* packet)
+{
+    printf("Marcador de inicio: %d\n", packet->marcador_inicio);
+    printf("Tamanho do pacote: %d\n", packet->tamanho);
+    printf("Sequencia do pacote: %d\n", packet->sequencia);
+    printf("Tipo do pacote: %d\n", packet->tipo);
+    //printTipoPacote(packet->tipo);
+    printf("Paridade do pacote: %d\n", (int)packet->paridade);
+    printf("Dados do pacote: %s\n", packet->dados);
+}
+
+void processPacket(packet_t* packet)
+{
+    if(packet->tipo == BACKUP_ARQ)
+    {
+        // Recebeu nome do arquivo nos dados, usar isso para criar arquivo
+        FILE* file = createFile(packet->dados);
+
+
     }
 }
