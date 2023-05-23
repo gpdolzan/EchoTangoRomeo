@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "ConexaoRawSocket.h"
 
 /* Definicao dos possiveis tipos */
 #define BACKUP_ARQ     0000
@@ -25,36 +26,26 @@
 #define NACK           1111
 
 /* Definicoes sobre pacote */
-#define MAX_PACKET 68
+#define MAX_PACKET 67
 #define MAX_DADOS 63
 
-typedef struct packet_t
+struct packet_t
 {
     unsigned char marcador_inicio;
-    unsigned char tamanho : 6;
-    unsigned char sequencia : 6;
-    unsigned char tipo : 4;
+    unsigned int tamanho : 6;
+    unsigned int sequencia : 6;
+    unsigned int tipo : 4;
     unsigned char dados[63];
     unsigned char paridade;
-}packet_t;
+}__attribute__((packed));
 
-// Union [68 bytes ambos]
-typedef union u_packet_t
-{
-    packet_t packet;
-    unsigned char bytes[MAX_PACKET];
-}u_packet_t;
+unsigned char calcParity(struct packet_t *packet);
+void initPacket(struct packet_t *packet, unsigned int tipo, unsigned int sequencia, unsigned char *dados, unsigned int tamanho);
+void printPacket(struct packet_t *packet);
 
-// Function that creates a u_packet_t
-u_packet_t* createPacket(unsigned int tamanho, unsigned int sequencia, unsigned int tipo, unsigned char *dados);
-
-// Function that prints a packet
-void printPacket(u_packet_t *packet);
-
-// Function that sends packet
-void sendPacket(u_packet_t *packet, int socket);
-
-// Function that receives packet
-u_packet_t* receivePacket(int socket);
+// Send packet to socket
+void sendPacket(int socket, struct packet_t *packet);
+// Receive packet from socket
+struct packet_t *receivePacket(int socket);
 
 #endif

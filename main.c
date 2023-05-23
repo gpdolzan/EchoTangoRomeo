@@ -1,6 +1,6 @@
 #include "trfiles.h"
 #include "client.h"
-#include "servidor.h"
+#include "server.h"
 
 int main(int argc, char const *argv[])
 {

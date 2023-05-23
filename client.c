@@ -2,14 +2,29 @@
 #include "packet.h"
 #include "ConexaoRawSocket.h"
 
-int soquete;
+int soquete_client;
 
 void runClient()
 {
-    int soquete = ConexaoRawSocket("enp5s0");
+    //soquete_client = ConexaoRawSocket("enp5s0");
     //printf("Cliente conectado ao soquete\n");
-    //soquete = ConexaoRawSocket("lo");
-    char command;
+    soquete_client = ConexaoRawSocket("lo");
+
+    // Read filename
+    char fileName[64];
+    memset(fileName, '\0', 64);
+    printf("Digite o nome do arquivo que voce quer realizar um backup: ");
+    scanf("%63s", fileName);
+
+    // Check if filename exists
+    if(access(fileName, F_OK) == -1)
+    {
+        printf("Arquivo nao existe\n");
+        exit(1);
+    }
+    backupSingleFile(fileName);
+
+    /*char command;
 
     while(1)
     {
@@ -55,7 +70,7 @@ void runClient()
                 printf("Comando invalido\n");
                 break;
         }
-    }
+    }*/
 }
 
 void menuBackupSingleFile()
@@ -121,24 +136,16 @@ void menuBackupSingleFile()
 
 void backupSingleFile(char* fileName)
 {
-    int i = 1;
-    u_packet_t* pacote = createPacket(strlen(fileName), 0, BACKUP_ARQ, fileName);
-    printPacket(pacote);
-
-    while(i)
+    struct packet_t pacote;
+    initPacket(&pacote, BACKUP_ARQ, 0, fileName, strlen(fileName));
+    
+    while(1)
     {
-        // Send packet
-        sendPacket(pacote, soquete);
-        printf("Pacote enviado, esperando resposta!\n");
-        // Receive packet
-        u_packet_t* pacoteRecebido = receivePacket(soquete);
-        if(pacoteRecebido != NULL)
-        {
-            printf("aqui\n");
-            printPacket(pacoteRecebido);
-            scanf("%d", &i);
-        }
+        // Using sendPacket
+        sendPacket(soquete_client, &pacote);
     }
+
+    exit(1);
 }
 
 void changeDirectory(char* path)
